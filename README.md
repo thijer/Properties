@@ -1,0 +1,2 @@
+# Properties
+This library provides a structured means to create properties that can be used in programs. These property objects represent key-value pairs that can describe parameters, settings or variables of a program. In addition, the `PropertyStore` class manages properties and enables the saving and loading of these properties to non-volatile memory (EEPROM on AVR, flash on ESP32).
