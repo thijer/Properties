@@ -282,31 +282,29 @@ class PropertyStore
         }
 };
 
-/* 
+template<size_t SIZE>
 class TelemetryStore
 {
     private:
-        std::vector<BaseProperty*> variables;
+        BaseProperty* variables[SIZE];
     public:
-        // PropertyStore(std::initializer_list<BaseProperty*> props):
-        //     properties(props)
-        // {}
-        TelemetryStore(std::initializer_list<BaseProperty*> vars):
-            variables(vars)
-        {}
+        TelemetryStore(BaseProperty* const (&vars)[SIZE])
+        {
+            for(uint32_t i = 0; i < SIZE; i++)
+            {
+                variables[i] = vars[i];
+            }
+        }
 
         void print_to(Print& sink)
         {
-            // PRINT("[Variables]: printing config.");
+            PRINT("[Variables]: printing config.");
             for(BaseProperty* v : variables) v->print_to(sink);
         }
 };
-*/
 
 #else
 #error "This architecture is not supported."
 #endif
-
-
 
 #endif
