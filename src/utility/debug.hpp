@@ -2,6 +2,9 @@
 #define HELPERS_H
 #include "Arduino.h"
 
+#ifndef DEBUG_PROPERTY
+#define DEBUG_PROPERTY Serial
+#endif
 
 template<typename... Args>
 void PRINT(Args... args);
@@ -9,13 +12,13 @@ void PRINT(Args... args);
 template<typename T, typename... Args>
 void PRINT(T t, Args... args)
 {
-    DEBUG.print(t);
+    DEBUG_PROPERTY.print(t);
     PRINT(args...);
 }
 
 template<> void PRINT()
 {
-    DEBUG.println();
+    DEBUG_PROPERTY.println();
 }
 
 

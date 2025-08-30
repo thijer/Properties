@@ -1,7 +1,9 @@
 #ifndef PROPERTYSTORE_HPP
 #define PROPERTYSTORE_HPP
-#define DEBUG Serial
+
+#ifdef DEBUG_PROPERTY
 #include "utility/debug.hpp"
+#endif
 
 #include "property.hpp"
 
@@ -173,14 +175,20 @@ class PropertyStore
 
         void save_to_memory(BaseProperty* p)
         {
+            #ifdef DEBUG_PROPERTY
             PRINT("[Properties]: Saving ", p->get_name(), " to memory.");
+            #endif
             if(!memory_opened)
             {
+                #ifdef DEBUG_PROPERTY
                 PRINT("[Properties]: Opening memory");
+                #endif
                 memory_opened = memory.begin(memory_namespace);
                 if(!memory_opened)
                 {    
+                    #ifdef DEBUG_PROPERTY
                     PRINT("[Properties]: Memory failed to open");
+                    #endif
                     return;
                 }
             }
@@ -205,12 +213,16 @@ class PropertyStore
 
         bool begin()
         {
+            #ifdef DEBUG_PROPERTY
             PRINT("[Properties]: Opening memory");
+            #endif
             memory_opened = memory.begin(memory_namespace);
             
             if(!memory_opened) 
             {
+                #ifdef DEBUG_PROPERTY
                 PRINT("[Properties]: Memory failed to open");
+                #endif
                 return false;
             }
 
@@ -221,12 +233,16 @@ class PropertyStore
                 if(memory.isKey(p->get_name()))
                 {
                     // Load existing value from memory
+                    #ifdef DEBUG_PROPERTY
                     PRINT("[Properties]: Loading ", p->get_name(), " from memory.");
+                    #endif
                     uint8_t mem[mem_segment_size] = {0};
                     size_t len = memory.getBytes(p->get_name(), mem, mem_segment_size);
                     if(len != mem_segment_size)
                     {
+                        #ifdef DEBUG_PROPERTY
                         PRINT("[Properties]: Read ", len," instead of ", mem_segment_size, " bytes.");
+                        #endif
                         return false;
                     }
                     p->set_from_bytes(mem);
@@ -234,7 +250,9 @@ class PropertyStore
                 }
                 else save_to_memory(p);
             }
+            #ifdef DEBUG_PROPERTY
             PRINT("[Properties]: Closing memory");
+            #endif
             memory.end();
             memory_opened = false;
             return true;
@@ -242,7 +260,9 @@ class PropertyStore
 
         void apply_setting(String key, String value)
         {
+            #ifdef DEBUG_PROPERTY
             PRINT("[Properties]: Applying ", value.c_str(), " to ", key.c_str());
+            #endif
             bool found = false;
             for(BaseProperty* p : properties)
             {
@@ -250,12 +270,16 @@ class PropertyStore
                 {
                     found = true;
                     p->set_from_string(value);
+                    #ifdef DEBUG_PROPERTY
                     PRINT("[Properties]: ", p->get_name(), " updated.");
+                    #endif
                 }
             }
             if(!found)
             {
+                #ifdef DEBUG_PROPERTY
                 PRINT("[Properties] ", key.c_str(), " not found.");
+                #endif
             }
         }
 
@@ -275,7 +299,9 @@ class PropertyStore
             // Close memory if opened.
             if(memory_opened)
             {
+                #ifdef DEBUG_PROPERTY
                 PRINT("[Properties]: Closing memory");
+                #endif
                 memory.end();
                 memory_opened = false;
             }
@@ -298,7 +324,7 @@ class TelemetryStore
 
         void print_to(Print& sink)
         {
-            PRINT("[Variables]: printing config.");
+            sink.println("[Variables]: printing config.");
             for(BaseProperty* v : variables) v->print_to(sink);
         }
 };
