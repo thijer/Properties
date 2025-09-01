@@ -1,4 +1,13 @@
 # Changelog
+## [2.0.0] - 1-09-2025
+### Added
+- `CategoricalProperty`, a property that can be set to a category from a set of categories.
+- A general `Property` template class, from which all specific properties are derived from.
+- By defining `PROPERTY_WIDE`, `IntegerProperty` and `RealProperty` use `int64_t` and `double` instead of `int32_t` and `float`.
+
+### Changed
+- `IntProperty`, `FloatProperty`, and `BoolProperty` are renamed to `IntegerProperty`, `RealProperty`, and `BooleanProperty`.
+- All properties are now based on a general `Property` template class. 
 
 ## [1.1.0] - 30-08-2025
 ### Added

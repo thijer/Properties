@@ -35,31 +35,29 @@ class BaseProperty
     private:
 };
 
-class IntProperty: public BaseProperty
+template<typename T>
+class Property: public BaseProperty
 {
     public:
-        IntProperty(const char* name, int32_t default_value = 0): 
+        Property(const char* name, T default_value): 
             BaseProperty(name),
             value(default_value)
         {}
+        Property(const char* name): 
+            BaseProperty(name)
+        {}
         
-        void set_from_string(String& input)
-        {
-            int32_t val = input.toInt();
-            // TODO checks
-            value = val;
-            updated = true;
-        }
+        void set_from_string(String& input){}
 
         void set_from_bytes(uint8_t* arr)
         {
-            int32_t v;
-            memcpy(&v, arr, IntProperty::size);
+            T v;
+            memcpy(&v, arr, size);
             value = v;
             // updated = true;
         }
 
-        void set(int32_t v)
+        void set(T v)
         {
             value = v;
             updated = true;
@@ -67,7 +65,7 @@ class IntProperty: public BaseProperty
         
         void save_to_bytes(uint8_t* arr)
         {
-            memcpy(arr, &value, IntProperty::size);    
+            memcpy(arr, &value, size);    
         }
 
         void print_to(Print& sink)
@@ -77,132 +75,112 @@ class IntProperty: public BaseProperty
             sink.println(value);
         }
         
-        int32_t get()                   { return value; }
-        void print(Print& sink)         { sink.print(name); sink.print(":"); sink.println(value); }
-        bool operator<(int32_t rhs)     { return value < rhs; }
-        bool operator>(int32_t rhs)     { return value > rhs; }
-        bool operator<=(int32_t rhs)    { return value <= rhs; }
-        bool operator>=(int32_t rhs)    { return value >= rhs; }
-        bool operator==(int32_t rhs)    { return value == rhs; }
-        bool operator!=(int32_t rhs)    { return value != rhs; }
+        T get()                   { return value; }
+        bool operator<(T rhs)     { return value < rhs; }
+        bool operator>(T rhs)     { return value > rhs; }
+        bool operator<=(T rhs)    { return value <= rhs; }
+        bool operator>=(T rhs)    { return value >= rhs; }
+        bool operator==(T rhs)    { return value == rhs; }
+        bool operator!=(T rhs)    { return value != rhs; }
         
-        static const size_t size;
-    private:
-        int32_t value;
-        // std::vector<IntSubscriber*> mSubscribers;
-
+        static const size_t size = sizeof(T);
+    protected:
+        T value;
 };
 
-class BoolProperty: public BaseProperty
+// Specializations to use the correct String conversion function.
+template<>
+void Property<float>::set_from_string(String& input)
+{
+    value = input.toFloat();
+    updated = true;
+}
+
+template<>
+void Property<double>::set_from_string(String& input)
+{
+    value = double(input.toFloat());
+    updated = true;
+}
+
+template<>
+void Property<int32_t>::set_from_string(String& input)
+{
+    value = int32_t(input.toInt());
+    updated = true;
+}
+
+template<>
+void Property<int64_t>::set_from_string(String& input)
+{
+    value = int64_t(input.toInt());
+    updated = true;
+}
+
+template<>
+void Property<bool>::set_from_string(String& input)
+{
+    value = bool(constrain(input.toInt(), 0, 1));;
+    updated = true;
+}
+
+// Temporary fix to enable printing wide IntegerProperties to a Printer.
+template<>
+void Property<int64_t>::print_to(Print& sink)
+{
+    sink.print(name);
+    sink.print(":");
+    // Temporary workaround to allow printing of int64_t.
+    sink.println(int32_t(value));
+}
+
+#ifdef PROPERTY_WIDE
+typedef Property<int64_t> IntegerProperty;
+typedef Property<double>  RealProperty;
+#else
+typedef Property<int32_t> IntegerProperty;
+typedef Property<float>   RealProperty;
+#endif
+typedef Property<bool>    BooleanProperty;
+
+template<size_t SIZE>
+class CategoricalProperty: public IntegerProperty
 {
     public:
-        BoolProperty(const char* name, bool default_value = false): 
-            BaseProperty(name),
-            value(default_value)
-        {}
-
+        CategoricalProperty(const char* name, const char* const (&cats)[SIZE]): 
+            IntegerProperty(name)
+        {
+            for(uint32_t i = 0; i < SIZE; i++)
+            {
+                categories[i] = cats[i];
+            }
+        }
+        
         void set_from_string(String& input)
         {
-            int32_t val = input.toInt();
-            // checks
-            value = bool(constrain(val, 0, 1));
-            updated = true;
-        }
-        void set_from_bytes(uint8_t* arr)
-        {
-            bool v;
-            memcpy(&v, arr, BoolProperty::size);
-            value = v;
-            updated = true;
-        }
-        void set(bool v)
-        {
-            value = v;
-            updated = true;
-        }
-
-        void save_to_bytes(uint8_t* arr)
-        {
-            memcpy(arr, &value, BoolProperty::size);    
+            const char* cat = input.c_str();
+            for(uint32_t i = 0; i < SIZE; i++)
+            {
+                if(strcmp(cat, categories[i]) == 0)
+                {
+                    IntegerProperty::set(i);
+                }
+            }
         }
 
         void print_to(Print& sink)
         {
             sink.print(name);
             sink.print(":");
-            sink.println(value);
+            sink.println(categories[value]);
         }
         
-        bool get() { return value; }
-        void print(Print& sink) { sink.print(name); sink.print(":"); sink.println(value); }
-
-        bool operator==(bool rhs) { return value == rhs; }
-        bool operator!=(bool rhs) { return value != rhs; }
-        explicit operator bool() const { return value; }
+        const char* get()                { return categories[value]; }
+        bool operator==(const char* rhs) { return strcmp(rhs, categories[value]) == 0; }
+        bool operator!=(const char* rhs) { return strcmp(rhs, categories[value]) != 0; }
         
-        static const size_t size;
     private:
-        bool value;
-
+        const char* categories[SIZE];
 };
-
-class FloatProperty: public BaseProperty
-{
-    public:
-        FloatProperty(const char* name, double default_value = false): 
-            BaseProperty(name),
-            value(default_value)
-        {}
-
-        void set_from_string(String& input)
-        {
-            float val = input.toFloat();
-            // checks
-            value = double(val);
-            // PRINT("[Properties] ", name, " updated with ", input, " to ", value);
-            updated = true;
-        }
-        void set_from_bytes(uint8_t* arr)
-        {
-            double v;
-            memcpy(&v, arr, FloatProperty::size);
-            value = v;
-            updated = true;
-        }
-        void set(double v)
-        {
-            value = v;
-            updated = true;
-        }
-        void save_to_bytes(uint8_t* arr)
-        {
-            memcpy(arr, &value, FloatProperty::size);    
-        }
-        void print_to(Print& sink)
-        {
-            sink.print(name);
-            sink.print(":");
-            sink.println(value);
-        }
-        
-        double get() { return value; }
-        bool operator<(double rhs) { return value < rhs; }
-        bool operator>(double rhs) { return value > rhs; }
-        bool operator<=(double rhs) { return value <= rhs; }
-        bool operator>=(double rhs) { return value >= rhs; }
-        bool operator==(double rhs) { return value == rhs; }
-        bool operator!=(double rhs) { return value != rhs; }
-        
-        static const size_t size;
-    
-    private:
-        double value;
-
-};
-
-const size_t IntProperty::size = sizeof(int32_t);
-const size_t BoolProperty::size = sizeof(bool);
-const size_t FloatProperty::size = sizeof(double);
-
 
 #endif

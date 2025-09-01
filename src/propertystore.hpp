@@ -14,7 +14,7 @@
 
 // Keep KEY_NAME_MAX_SIZE equal to NVS_KEY_NAME_MAX_SIZE from nvs.h esp32
 #define KEY_NAME_MAX_SIZE 16        // Includes null-terminator.
-const size_t mem_segment_size = max(max(IntProperty::size, BoolProperty::size), FloatProperty::size);
+const size_t mem_segment_size = max(max(IntegerProperty::size, BooleanProperty::size), RealProperty::size);
 const size_t mem_entry_size   = KEY_NAME_MAX_SIZE + mem_segment_size;
 const size_t mem_max_entries  = round((E2END + 1) / mem_entry_size);
 
@@ -160,7 +160,7 @@ bool Preferences::remove(const char* key)
 #elif defined(ARDUINO_ARCH_ESP32)
 #include "Print.h"
 #include "Preferences.h"
-const size_t mem_segment_size = std::max({IntProperty::size, BoolProperty::size, FloatProperty::size});
+const size_t mem_segment_size = std::max({IntegerProperty::size, BooleanProperty::size, RealProperty::size});
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_AVR)
