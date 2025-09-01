@@ -143,4 +143,44 @@ typedef Property<float>   RealProperty;
 #endif
 typedef Property<bool>    BooleanProperty;
 
+template<size_t SIZE>
+class CategoricalProperty: public IntegerProperty
+{
+    public:
+        CategoricalProperty(const char* name, const char* const (&cats)[SIZE]): 
+            IntegerProperty(name)
+        {
+            for(uint32_t i = 0; i < SIZE; i++)
+            {
+                categories[i] = cats[i];
+            }
+        }
+        
+        void set_from_string(String& input)
+        {
+            const char* cat = input.c_str();
+            for(uint32_t i = 0; i < SIZE; i++)
+            {
+                if(strcmp(cat, categories[i]) == 0)
+                {
+                    IntegerProperty::set(i);
+                }
+            }
+        }
+
+        void print_to(Print& sink)
+        {
+            sink.print(name);
+            sink.print(":");
+            sink.println(categories[value]);
+        }
+        
+        const char* get()                { return categories[value]; }
+        bool operator==(const char* rhs) { return strcmp(rhs, categories[value]) == 0; }
+        bool operator!=(const char* rhs) { return strcmp(rhs, categories[value]) != 0; }
+        
+    private:
+        const char* categories[SIZE];
+};
+
 #endif
