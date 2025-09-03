@@ -176,6 +176,15 @@ class CategoricalProperty: public IntegerProperty
         }
         
         const char* get()                { return categories[value]; }
+        const char* get(size_t i)
+        { 
+            if(i < SIZE)
+            {
+                return categories[i];
+            }
+            else return nullptr;
+        }
+        
         bool operator==(const char* rhs) { return strcmp(rhs, categories[value]) == 0; }
         bool operator!=(const char* rhs) { return strcmp(rhs, categories[value]) != 0; }
         

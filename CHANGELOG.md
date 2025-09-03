@@ -1,4 +1,8 @@
 # Changelog
+## [2.1.0] - 3-9-2025
+### Added
+- Access to all categories of `CategoricalProperty` by providing an index to `get()`. 
+
 ## [2.0.0] - 1-09-2025
 ### Added
 - `CategoricalProperty`, a property that can be set to a category from a set of categories.
