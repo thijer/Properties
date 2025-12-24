@@ -82,6 +82,8 @@ class Property: public BaseProperty
         bool operator>=(T rhs)    { return value >= rhs; }
         bool operator==(T rhs)    { return value == rhs; }
         bool operator!=(T rhs)    { return value != rhs; }
+        bool operator||(T rhs)    { return value || rhs; }
+        bool operator&&(T rhs)    { return value && rhs; }
         
         static const size_t size = sizeof(T);
     protected:
