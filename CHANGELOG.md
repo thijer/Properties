@@ -1,4 +1,8 @@
 # Changelog
+## [2.2.0] - 25-12-2025
+### Added
+- Boolean OR and AND operators (`||`, `&&`) to `Property`.
+
 ## [2.1.0] - 3-9-2025
 ### Added
 - Access to all categories of `CategoricalProperty` by providing an index to `get()`. 
