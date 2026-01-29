@@ -1,4 +1,13 @@
 # Changelog
+## [2.4.0] - 29-01-2026
+### Added
+- a `Property`'s value can now be set from ArduinoJson's `JsonVariant`.
+- `Property`s can save their value to a `JsonObject`.
+- `BaseStore`, that provides basic functions to access stored `Property`s.
+
+### Changed
+- `TelemetryStore` and `PropertyStore` now inherit from `BaseStore`.
+
 ## [2.3.0] - 29-01-2026
 ### Added
 - `CategoricalProperty` can now be set to a `const char*` value.
