@@ -1,4 +1,8 @@
 # Changelog
+## [2.3.0] - 29-01-2026
+### Added
+- `CategoricalProperty` can now be set to a `const char*` value.
+
 ## [2.2.0] - 25-12-2025
 ### Added
 - Boolean OR and AND operators (`||`, `&&`) to `Property`.
