@@ -14,6 +14,12 @@ class BaseProperty
         // Used to save the current value to non-volatile memory.
         virtual void save_to_bytes(uint8_t* ptr) = 0;
 
+        #ifdef ARDUINOJSON_VERSION
+        // Save value to a JSON document;
+        virtual void save_to_json(JsonObject doc) = 0;
+        virtual void set_from_json(JsonVariant var) = 0;
+        #endif
+
         // Print the value to the designated Print interface (such as Serial).
         virtual void print_to(Print& sink) = 0;
 
@@ -63,6 +69,19 @@ class Property: public BaseProperty
             updated = true;
         }
         
+        #ifdef ARDUINOJSON_VERSION
+        void save_to_json(JsonObject doc)
+        {
+            doc[name] = value;
+        }
+
+        void set_from_json(JsonVariant var)
+        {
+            value = var.as<T>();
+            updated = true;
+        }
+        #endif
+
         void save_to_bytes(uint8_t* arr)
         {
             memcpy(arr, &value, size);    
