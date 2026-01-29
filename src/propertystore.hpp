@@ -164,8 +164,18 @@ const size_t mem_segment_size = std::max({IntegerProperty::size, BooleanProperty
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_AVR)
+
+class BaseStore
+{
+    protected:
+        BaseStore(size_t size): size(size) {};
+    public:
+        const size_t size;
+        virtual BaseProperty* get_property(uint32_t i) = 0;
+};
+
 template<size_t SIZE>
-class PropertyStore
+class PropertyStore: public BaseStore
 {
     private:
         BaseProperty* properties[SIZE];
@@ -203,6 +213,7 @@ class PropertyStore
         //     properties(props)
         // {}
         PropertyStore(BaseProperty* const (&props)[SIZE]):
+            BaseStore(SIZE),
             memory_opened(false)
         {
             for(uint32_t i = 0; i < SIZE; i++)
@@ -306,15 +317,22 @@ class PropertyStore
                 memory_opened = false;
             }
         }
+
+        BaseProperty* get_property(uint32_t i)
+        {
+            if(i >= SIZE) return nullptr;
+            else return properties[i];
+        }
 };
 
 template<size_t SIZE>
-class TelemetryStore
+class TelemetryStore: public BaseStore
 {
     private:
         BaseProperty* variables[SIZE];
     public:
-        TelemetryStore(BaseProperty* const (&vars)[SIZE])
+        TelemetryStore(BaseProperty* const (&vars)[SIZE]):
+            BaseStore(SIZE)
         {
             for(uint32_t i = 0; i < SIZE; i++)
             {
@@ -326,6 +344,12 @@ class TelemetryStore
         {
             sink.println("[Variables]: printing config.");
             for(BaseProperty* v : variables) v->print_to(sink);
+        }
+
+        BaseProperty* get_property(uint32_t i)
+        {
+            if(i >= SIZE) return nullptr;
+            else return variables[i];
         }
 };
 
