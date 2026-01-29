@@ -157,10 +157,9 @@ class CategoricalProperty: public IntegerProperty
                 categories[i] = cats[i];
             }
         }
-        
-        void set_from_string(String& input)
+
+        void set(const char* cat)
         {
-            const char* cat = input.c_str();
             for(uint32_t i = 0; i < SIZE; i++)
             {
                 if(strcmp(cat, categories[i]) == 0)
@@ -168,6 +167,11 @@ class CategoricalProperty: public IntegerProperty
                     IntegerProperty::set(i);
                 }
             }
+        }
+        
+        void set_from_string(String& input)
+        {
+            set(input.c_str());
         }
 
         void print_to(Print& sink)
