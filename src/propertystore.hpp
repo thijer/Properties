@@ -212,16 +212,34 @@ class PropertyStore: public BaseStore
         // PropertyStore(std::initializer_list<BaseProperty*> props):
         //     properties(props)
         // {}
+        PropertyStore():
+            BaseStore(SIZE),
+            memory_opened(false)
+        {}
+
         PropertyStore(BaseProperty* const (&props)[SIZE]):
             BaseStore(SIZE),
             memory_opened(false)
+        {
+            assign_properties(props);
+        }
+
+        PropertyStore<SIZE> operator=(const PropertyStore<SIZE>& rhs)
+        {
+            assign_properties(rhs.properties);
+            return *this;
+        }
+
+        void assign_properties(BaseProperty* const (&props)[SIZE])
         {
             for(uint32_t i = 0; i < SIZE; i++)
             {
                 properties[i] = props[i];
             }
         }
-
+        
+        /// @brief WARNING: `PropertyStore` should be constructed with a property array 
+        /// or `assign_properties()` should have been called before `begin()`
         bool begin()
         {
             #ifdef DEBUG_PROPERTY
@@ -331,8 +349,23 @@ class TelemetryStore: public BaseStore
     private:
         BaseProperty* variables[SIZE];
     public:
+        TelemetryStore():
+            BaseStore(SIZE)
+        {}
+
         TelemetryStore(BaseProperty* const (&vars)[SIZE]):
             BaseStore(SIZE)
+        {
+            assign_properties(vars);
+        }
+
+        TelemetryStore<SIZE> operator=(const TelemetryStore<SIZE>& rhs)
+        {
+            assign_properties(rhs.variables);
+            return *this;
+        }
+
+        void assign_properties(BaseProperty* const (&vars)[SIZE])
         {
             for(uint32_t i = 0; i < SIZE; i++)
             {

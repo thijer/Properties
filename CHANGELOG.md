@@ -1,4 +1,9 @@
 # Changelog
+## [2.5.0] - 2-2-2026
+### Added
+- Default constructors for `TelemetryStore` and `PropertyStore`.
+- `assign_properties()` function that copies an array of `BaseProperty` pointers into the store. 
+
 ## [2.4.0] - 29-01-2026
 ### Added
 - a `Property`'s value can now be set from ArduinoJson's `JsonVariant`.
