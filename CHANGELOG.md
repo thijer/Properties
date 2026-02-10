@@ -1,4 +1,8 @@
 # Changelog
+## [3.0.1] - 10-2-2026
+### Added
+- `test_properties.ino`, an example that showcases basic `Property` usage and the saving and loading to memory.
+
 ## [3.0.0] - 10-2-2026
 ### Added
 - `PropertyMemory`, which will manage the loading and saving of `Property`s to non-volatile memory on behalf of a `PropertyStore` instance.
