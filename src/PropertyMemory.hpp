@@ -1,0 +1,290 @@
+#ifndef PROPERTYMEMORY_HPP
+#define PROPERTYMEMORY_HPP
+#include "propertystore.hpp"
+
+#ifdef DEBUG_PROPERTY
+#include "utility/debug.hpp"
+#endif
+
+#if defined(ARDUINO_ARCH_AVR) && defined(E2END)
+#include <avr/eeprom.h>
+#include <avr/io.h>
+
+// Keep KEY_NAME_MAX_SIZE equal to NVS_KEY_NAME_MAX_SIZE from nvs.h esp32
+#define KEY_NAME_MAX_SIZE 16        // Includes null-terminator.
+const size_t mem_segment_size = max(max(IntegerProperty::size, BooleanProperty::size), RealProperty::size);
+const size_t mem_entry_size   = KEY_NAME_MAX_SIZE + mem_segment_size;
+const size_t mem_max_entries  = round((E2END + 1) / mem_entry_size);
+
+class Preferences
+{
+    public:
+        Preferences();
+        bool begin(const char* mem_namespace = nullptr);
+        void end();
+        bool isKey(const char* key);
+        size_t getBytes(const char* key, void* value, size_t len);
+        size_t putBytes(const char* key, const void* value, size_t len);
+        bool remove(const char* key);
+        // bool wipeMemory();
+    private:
+        size_t n_entries;
+        size_t getEntry(const char* key, uint8_t* buf = nullptr);
+};
+
+Preferences::Preferences()
+{
+
+}
+
+bool Preferences::begin(const char* mem_namespace)
+{
+    if(!eeprom_is_ready()) return false;
+
+    // Count entries in memory
+    uint8_t block[mem_entry_size] = {0};
+    while(n_entries < mem_max_entries)
+    {
+        #ifdef WIPE_MEMORY
+        eeprom_write_block(block, (uint8_t*)(n_entries * mem_entry_size), mem_entry_size);
+        #else
+        eeprom_read_block(block, (uint8_t*)(n_entries * mem_entry_size), mem_entry_size);
+        if(block[0] == 0) break;
+        #endif
+        n_entries++;
+    }
+    #ifdef WIPE_MEMORY
+    n_entries = 0;
+    #endif
+    return true;
+}
+
+void Preferences::end()
+{
+
+}
+
+/* Find the block of memory in eeprom associated with the provided key, and store it in buf. */
+size_t Preferences::getEntry(const char* key, uint8_t* buf)
+{
+    size_t i = 0;
+    uint8_t block[mem_entry_size] = {0};
+    if(buf == nullptr) buf = block;
+
+    while(i < n_entries)
+    {
+        eeprom_read_block(buf, (void*)(i * mem_entry_size), mem_entry_size);
+        if(strncmp(key, (const char*)buf, strlen(key)) == 0) return i;
+        i++;
+    }
+    return i;
+}
+
+bool Preferences::isKey(const char* key)
+{
+    return getEntry(key) < n_entries;
+}
+
+size_t Preferences::putBytes(const char* key, const void* value, size_t len)
+{
+    if(len != mem_segment_size)
+    {
+        return 0;
+    }
+    uint8_t block[mem_entry_size] = {0};
+    size_t i = getEntry(key, block);
+    if(i < n_entries)
+    {
+        // Update existing entry
+        memcpy(block + KEY_NAME_MAX_SIZE, value, len);
+        eeprom_update_block(block + KEY_NAME_MAX_SIZE, (void*)(i * mem_entry_size + KEY_NAME_MAX_SIZE), mem_segment_size);
+        return len;
+    }
+    else if(n_entries < mem_max_entries)
+    {
+        // Create new entry
+        size_t keylength = strlen(key);
+        if(keylength >= KEY_NAME_MAX_SIZE) return 0;
+        memcpy(block, key, keylength);
+        memcpy(block + KEY_NAME_MAX_SIZE, value, len);
+        eeprom_write_block(block, (void*)(i * mem_entry_size), mem_entry_size);
+        n_entries++;
+        return len;
+    }
+    else
+    {
+        return 0;
+    }
+    
+}
+
+size_t Preferences::getBytes(const char* key, void* value, size_t len)
+{
+    if(len != mem_segment_size) return 0;
+
+    uint8_t block[mem_entry_size] = {0};
+    size_t i = getEntry(key, block);
+    if(i < n_entries)
+    {
+        memcpy(value, block + KEY_NAME_MAX_SIZE, len);
+        return len;
+    }
+    return 0;
+}
+
+bool Preferences::remove(const char* key)
+{
+    size_t i = getEntry(key);
+    if(i < n_entries)
+    {
+        uint8_t block[mem_entry_size] = {0};
+        // Update existing entry
+        eeprom_write_block(block, (void*)(i * mem_entry_size), mem_entry_size);
+        return true;
+    }
+    else return false;
+}
+
+/* bool Preferences::wipeMemory()
+{
+    uint8_t block[16] = {0};
+    for(size_t i = 0; i < (E2END + 1); i += 16)
+    {
+        eeprom_write_block(block, (void*)i, 16);
+    }
+    return true;
+} */
+
+#elif defined(ARDUINO_ARCH_ESP32)
+#include "Print.h"
+#include "Preferences.h"
+const size_t mem_segment_size = std::max({IntegerProperty::size, BooleanProperty::size, RealProperty::size});
+#endif
+
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_AVR)
+
+class PropertyMemory
+{
+    public:
+        /// @brief Construct an interface for a `PropertyStore` that loads and save `Property`s to non-volatile memory.
+        /// @param store A `PropertyStore` with the `Property`s to save to memory. 
+        /// @param mem_namespace (optional) The desired memory namespace to use. On the ESP32, the `Preferences` library supports multiple namespaces on a device.
+        PropertyMemory(BaseStore& store, const char* mem_namespace = "properties");
+        ~PropertyMemory(){}
+        
+        /// @brief Starts the interface and loads the saved values of the properties if they exist in memory.
+        /// @return `true` if the memory opened and all values loaded correctly, `false` otherwise.
+        bool begin();
+        /// @brief Save all `Property`s that are updated to memory.
+        void save();
+
+    protected:
+    
+    private:
+        BaseStore& store;
+        Preferences memory;
+        const char* mem_namespace;
+        bool mem_opened;
+
+        /// @brief Save a specific `Property` to memory.
+        /// @param p The `Property` to save.
+        void save_to_memory(BaseProperty* p);
+};
+
+PropertyMemory::PropertyMemory(
+    BaseStore& store,
+    const char* mem_namespace
+):
+    store(store),
+    mem_namespace(mem_namespace)
+{}
+
+bool PropertyMemory::begin()
+{
+    mem_opened = memory.begin(mem_namespace);   
+    if(!mem_opened) 
+    {
+        #ifdef DEBUG_PROPERTY
+        PRINT("[Properties]: Memory failed to open");
+        #endif
+        return false;
+    }
+    for(BaseProperty* p : store)
+    {
+        if(memory.isKey(p->get_name()))
+        {
+            // Load existing value from memory
+            #ifdef DEBUG_PROPERTY
+            PRINT("[Properties]: Loading ", p->get_name(), " from memory.");
+            #endif
+            uint8_t mem[mem_segment_size] = {0};
+            size_t len = memory.getBytes(p->get_name(), mem, mem_segment_size);
+            if(len != mem_segment_size)
+            {
+                #ifdef DEBUG_PROPERTY
+                PRINT("[Properties]: Read ", len," instead of ", mem_segment_size, " bytes.");
+                #endif
+                return false;
+            }
+            p->set_from_bytes(mem);
+            p->saved();        // Disable save flag when loading from memory.
+        }
+        else save_to_memory(p);
+    }
+
+    #ifdef DEBUG_PROPERTY
+    PRINT("[Properties]: Closing memory");
+    #endif
+    memory.end();
+    mem_opened = false;
+    return true;
+}
+
+void PropertyMemory::save()
+{
+    // Loop through all registered properties and check if they need saving.
+    for(BaseProperty* p : store)
+    {
+        if(p->is_updated()) save_to_memory(p);
+    }
+    // Close memory if opened.
+    if(mem_opened)
+    {
+        #ifdef DEBUG_PROPERTY
+        PRINT("[Properties]: Closing memory");
+        #endif
+        memory.end();
+        mem_opened = false;
+    }
+}
+
+void PropertyMemory::save_to_memory(BaseProperty* p)
+{
+    #ifdef DEBUG_PROPERTY
+    PRINT("[Properties]: Saving ", p->get_name(), " to memory.");
+    #endif
+    if(!mem_opened)
+    {
+        #ifdef DEBUG_PROPERTY
+        PRINT("[Properties]: Opening memory");
+        #endif
+        mem_opened = memory.begin(mem_namespace);
+        if(!mem_opened)
+        {    
+            #ifdef DEBUG_PROPERTY
+            PRINT("[Properties]: Memory failed to open");
+            #endif
+            return;
+        }
+    }
+    uint8_t mem[mem_segment_size] = {0};
+    p->save_to_bytes(mem);
+    memory.putBytes(p->get_name(), mem, mem_segment_size);
+    p->saved();
+}
+
+#else
+#error "This architecture is not supported."
+#endif
+
+#endif

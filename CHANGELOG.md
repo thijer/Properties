@@ -1,4 +1,16 @@
 # Changelog
+## [3.0.0] - 10-2-2026
+### Added
+- `PropertyMemory`, which will manage the loading and saving of `Property`s to non-volatile memory on behalf of a `PropertyStore` instance.
+- `PropertyTextInterface`, which allows to print `Property`s in a `PropertyStore` to be printed to a `Print` instance, and provides an interface to set the value of a specific `Property` by means of a key-value pair.
+- `BaseStore` can now provide Iterators.
+
+### Changed
+- `PropertyStore` functionality is reduced to only storing and providing access to `Property`s.
+
+### Removed
+- `TelemetryStore`, as it is now a duplicate of `PropertyStore`
+
 ## [2.5.0] - 2-2-2026
 ### Added
 - Default constructors for `TelemetryStore` and `PropertyStore`.
