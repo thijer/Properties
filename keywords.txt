@@ -1,0 +1,9 @@
+# Structures
+IntegerProperty KEYWORD3
+BooleanProperty KEYWORD3
+RealProperty KEYWORD3
+CategoricalProperty KEYWORD3
+
+PropertyStore KEYWORD3
+PropertyMemory KEYWORD3
+PropertyTextInterface KEYWORD3
